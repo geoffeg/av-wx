@@ -7,7 +7,8 @@
 (def metar-url "http://geoffeg.org/mt.txt")
 
 (defn parse-metar [csvdata]
-  (parse-csv (subs csvdata (.indexOf csvdata "raw_text"))))
+  (let [csvrows (parse-csv (subs csvdata (.indexOf csvdata "raw_text")))]
+  (map #(interleave (first csvrows) %) (rest csvrows))))
 
 (defn get-metars [search]
   (let [{:keys [error status headers body]} @(http/get (str metar-url) {:as :text})]
