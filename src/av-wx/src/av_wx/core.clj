@@ -6,11 +6,12 @@
         [ring.middleware.json :only [wrap-json-response]]
         [ring.util.response :only [response]])
   (:require [ring.middleware.reload :as reload]
+            [av-wx.reports :as reports]
             [cheshire.core :refer :all]))
 
 (defn show-index-page [args] "Meow!")
 
-(defn get-metar [search] (str "Testing!" search))
+(defn get-metar [search] (response (reports/get-metars search)))
 
 (defn get-taf [search] (response {:search search}))
 

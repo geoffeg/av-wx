@@ -11,5 +11,6 @@
                  [ring/ring-core "1.1.8"]
                  [cheshire "5.2.0"]
                  [ring/ring-json "0.2.0"]
-                 [clojure-csv/clojure-csv "2.0.1"]]
+                 [clojure-csv/clojure-csv "2.0.1"]
+                 [org.clojure/algo.generic "0.1.1"]]
   :main av-wx.core)
