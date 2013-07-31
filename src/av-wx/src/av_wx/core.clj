@@ -11,7 +11,8 @@
 
 (defn show-index-page [args] "Meow!")
 
-(defn get-metar [search] (response (reports/get-metars search)))
+(defn get-metar [search]
+  (response (reports/get-metars search)))
 
 (defn get-taf [search] (response {:search search}))
 
