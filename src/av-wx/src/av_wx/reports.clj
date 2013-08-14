@@ -14,7 +14,6 @@
                       "pcp3hr_in" #(Float/parseFloat %)
                       "minT_c" #(Float/parseFloat %)
                       "altim_in_hg" #(Float/parseFloat %)
-                      "three_hr_pressure_tendency_mb" #(String %)
                       "three_hr_pressure_tendancy_mb" #(Float/parseFloat %)
                       "elevation_m" #(Float/parseFloat %)
                       "latitude" #(Float/parseFloat %)
@@ -32,10 +31,13 @@
                       "wind_dir_degrees" #(Integer/parseInt %)})
 
 (defn cast-csv-field [csvmap]
-  (reduce-kv
+  (into {}
+        (remove #(or (nil? (val %)) (and (string? (val %)) (clojure.string/blank? (val %))))
+        (reduce-kv
    (fn [acc k v]
      (update-in acc [k] #(if-not (clojure.string/blank? %) (v %))))
-   csvmap csv-field-types))
+   csvmap
+   csv-field-types))))
 
 (defn cast-csv-fields [csvdata]
   (mapv cast-csv-field csvdata))
