@@ -30,17 +30,18 @@
                       "dewpoint_in" #(Float/parseFloat %)
                       "wind_dir_degrees" #(Integer/parseInt %)})
 
-(defn cast-csv-field [csvmap]
-  (into {}
-        (remove #(or (nil? (val %)) (and (string? (val %)) (clojure.string/blank? (val %))))
-        (reduce-kv
+(defn cast-csv-field [csvmap types]
+  (reduce-kv
    (fn [acc k v]
      (update-in acc [k] #(if-not (clojure.string/blank? %) (v %))))
    csvmap
-   csv-field-types))))
+   types))
+
+(defn remove-empty-values [csvmap]
+  (into {} (remove #(or (nil? (val %)) (and (string? (val %)) (clojure.string/blank? (val %)))) csvmap)))
 
 (defn cast-csv-fields [csvdata]
-  (mapv cast-csv-field csvdata))
+  (mapv #(remove-empty-values (cast-csv-field % csv-field-types)) csvdata))
 
 (defn parse-metar [csvdata]
   (let [csvrows (parse-csv (subs csvdata (.indexOf csvdata "raw_text")))]
