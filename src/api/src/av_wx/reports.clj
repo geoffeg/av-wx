@@ -6,6 +6,8 @@
         [clojure.pprint]))
 
 (def metar-url "http://aviationweather.gov/adds/dataserver_current/httpparam?dataSource=metars&requestType=retrieve&format=csv&hoursBeforeNow=4&mostRecentForEachStation=true&stationString=")
+(def taf-url "http://aviationweather.gov/adds/dataserver_current/httpparam?dataSource=tafs&requestType=retrieve&format=csv&hoursBeforeNow=4&mostRecentForEachStation=true&stationString=")
+
 (def csv-field-types {"maxT24hr_c" #(BigDecimal. %)
                       "pcp6hr_in" #(BigDecimal. %)
                       "snow_in" #(BigDecimal. %)
@@ -59,6 +61,13 @@
   (if error
     (println "ERROR!" error)
      (parse-metar body))))
+
+; TODO This doesn't work yet, the list of fields in TAFs is huge and I haven't created the type list yet
+;(defn get-tafs [search]
+;  (let [{:keys [error status headers body]} @(http/get (str taf-url search) {:as :test})]
+;    (if error
+;      (println "ERROR!" error)
+;      (parse-taf body))))
 
 ;(pprint (get-metars "KSFO"))
 ;(pprint (mapv (get-geoip-data "66.249.78.223") ["latitude" "longitude"]))

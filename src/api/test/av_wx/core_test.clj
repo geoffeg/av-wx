@@ -6,7 +6,7 @@
 
 (deftest find-stations
   (testing "MongoDB search for station by lat lon failed"
-    (is (= (get-in (db/find-stations 37.62 -122.37 "metar") ["obj" "icao"]) "KSFO" ))))
+    (is (= (first (db/find-stations 37.62 -122.37 "metar")) {"station" "KSFO"} ))))
 
 (deftest find-zipcode
   (testing "MongoDB search for zipcode lat/lon failed"
@@ -21,9 +21,9 @@
 
 (deftest km2nm
   (testing "Kilometers to nautical miles"
-    (is (= (utils/km2nm 500) 269.97840172785))
-    (is (= (utils/km2nm 10.5) 5.6695464362848496))
-    (is (= (utils/km2nm 0.5) 0.26997840172785))))
+    (is (= (utils/km2nm 500) 269.97840172785)) ; http://www.wolframalpha.com/input/?i=500+kilometers+to+nautical+miles
+    (is (= (utils/km2nm 10.5) 5.6695464362848496)) ; http://www.wolframalpha.com/input/?i=10.5+kilometers+to+nautical+miles
+    (is (= (utils/km2nm 0.5) 0.26997840172785)))) ; http://www.wolframalpha.com/input/?i=0.5+kilometers+to+nautical+miles
 
 (deftest bearing-to
   (testing "Bearing"
