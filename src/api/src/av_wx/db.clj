@@ -12,12 +12,12 @@
 (mg/set-db! (mg/get-db (get-in utils/conf [:mongo :db])))
 
 (defn find-stations [latitude longitude mode]
-  (mg/command (sorted-map
+  (get-in (mg/command (sorted-map
    :geoNear "stations"
    :near {:type "Point", :coordinates [longitude, latitude]}
-   :query {"metar" true}
+   :query {mode true}
    :limit 1
-   :spherical true)))
+   :spherical true)) ["results"]))
 
 (defn find-zipcode [zipcode]
   (mc/find-one-as-map "zipcodes" {:_id (str zipcode)}))
