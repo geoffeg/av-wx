@@ -1,6 +1,18 @@
 (ns av-wx.utils
-  (:require [clojure.algo.generic.math-functions :as math-f])
+  (:require [clojure.algo.generic.math-functions :as math-f]
+            [clojure.java.io :as io])
+  (:import [java.io PushbackReader])
   (:use [clojure.pprint]))
+
+(def conf (binding [*read-eval* false]
+            (with-open [r (io/reader "/etc/av-wx.conf")]
+              (read (PushbackReader. r )))))
+
+(defn cast-map [m types]
+  (reduce-kv
+   (fn [acc k v]
+     (update-in acc [k] #(if-not (clojure.string/blank? %) (v %))))
+   m types))
 
 (defn deg2rad [point]
   (mapv #(Math/toRadians %) point))

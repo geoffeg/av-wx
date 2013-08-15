@@ -31,17 +31,11 @@
                       "dewpoint_c" #(BigDecimal. %)
                       "wind_dir_degrees" #(Integer/parseInt %)})
 
-(defn cast-map [m types]
-  (reduce-kv
-   (fn [acc k v]
-     (update-in acc [k] #(if-not (clojure.string/blank? %) (v %))))
-   m types))
-
 (defn remove-empty-values [csvmap]
   (into {} (remove #(or (nil? (val %)) (and (string? (val %)) (clojure.string/blank? (val %)))) csvmap)))
 
 (defn cast-csv-fields [csvdata]
-  (mapv #(remove-empty-values (cast-map % csv-field-types)) csvdata))
+  (mapv #(remove-empty-values (utils/cast-map % csv-field-types)) csvdata))
 
 (defn parse-metar [csvdata]
   (let [csvrows (parse-csv (subs csvdata (.indexOf csvdata "raw_text")))]
@@ -56,8 +50,8 @@
 (defn append-geo-data [reports src-coords]
   (mapv #(let [report-coords [(% "latitude") (% "longitude")]]
           (assoc %
-            "distance" (utils/distance-between src-coords report-coords),
-            "bearing" (utils/bearing-to src-coords report-coords)))
+            "distance-from" (utils/distance-between src-coords report-coords),
+            "bearing-to" (utils/bearing-to src-coords report-coords)))
         reports))
 
 (defn get-metars [search]
@@ -67,4 +61,5 @@
      (parse-metar body))))
 
 ;(pprint (get-metars "KSFO"))
-;(pprint (get-geoip-data "108.73.45.165"))
+(pprint (mapv (get-geoip-data "66.249.78.223") ["latitude" "longitude"]))
+(pprint (append-geo-data (get-metars "KSFO") (mapv (get-geoip-data "66.249.78.223") ["latitude" "longitude"])))
