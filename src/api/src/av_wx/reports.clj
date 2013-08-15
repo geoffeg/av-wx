@@ -61,5 +61,5 @@
      (parse-metar body))))
 
 ;(pprint (get-metars "KSFO"))
-(pprint (mapv (get-geoip-data "66.249.78.223") ["latitude" "longitude"]))
-(pprint (append-geo-data (get-metars "KSFO") (mapv (get-geoip-data "66.249.78.223") ["latitude" "longitude"])))
+;(pprint (mapv (get-geoip-data "66.249.78.223") ["latitude" "longitude"]))
+;(pprint (append-geo-data (get-metars "KSFO") (mapv (get-geoip-data "66.249.78.223") ["latitude" "longitude"])))
