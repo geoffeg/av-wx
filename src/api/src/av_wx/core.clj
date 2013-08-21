@@ -7,12 +7,26 @@
         [ring.util.response :only [response]])
   (:require [ring.middleware.reload :as reload]
             [av-wx.reports :as reports]
-            [cheshire.core :refer :all]))
+            [cheshire.core :refer :all]
+            [av-wx.utils :as utils]))
 
 (defn show-index-page [args] "Meow!")
 
+; If httparams were passed, just return those
+; Otherwise use the geoip service
+(defn get-geo-data
+  ([ip httparams]
+    (get-geo-data ip))
+  ([ip]
+    (reports/get-geoip-data ip)))
+
+(defn build-response [reports ipaddr geoloc]
+  (let [geo-data (get-geo-data ipaddr)]
+    {"reports"  (reports/append-geo-data reports (mapv geo-data ["latitude" "longitude"])),
+      "location" geo-data}))
+
 (defn get-metar [search]
-  (response (reports/get-metars search)))
+  (response (build-response (reports/get-metars search) "108.73.45.165" nil)))
 
 (defn get-taf [search] (response {:search search}))
 

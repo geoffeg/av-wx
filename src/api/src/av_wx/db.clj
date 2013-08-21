@@ -13,7 +13,8 @@
 
 (defn find-stations [latitude longitude mode]
   (mapv
-    #(hash-map "station" (get-in % ["obj" "icao"]))
+    #(hash-map "icao" (get-in % ["obj" "icao"])
+               "name" (get-in % ["obj" "name"]))
     (get-in (mg/command (sorted-map
                          :geoNear "stations"
                          :near {:type "Point", :coordinates [longitude, latitude]}

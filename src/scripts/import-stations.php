@@ -12,6 +12,7 @@ while (($line = fgets($fh, 1024)) !== false) {
   $iata = trim(substr($line, 26, 3));
   $lat = substr($line, 39, 6); 
   $lon = substr($line, 47, 7);
+	$name = ucwords(strtolower(trim(substr($line, 3, 17))));
   $lat_dec = DMStoDEC(substr($lat, 0, 2), substr($lat, 3, 2), 0, substr($lat, -1, 1) );
   $lon_dec = DMStoDEC(substr($lon, 0, 3), substr($lon, 4, 2), 0, substr($lon, -1, 1) );
   $metar = trim(substr($line, 62, 1));
@@ -19,6 +20,7 @@ while (($line = fgets($fh, 1024)) !== false) {
   if ($metar === "X" && (intval($lat_dec) !== 0 || intval($lon_dec) !== 0)) {
     echo "$icao $iata $lat ($lat_dec) $lon ($lon_dec)\n";
     $insert = array('location' => array(floatval($lon_dec), floatval($lat_dec)), 'metar' => false, 'taf' => false);
+		if (isset($name) && strlen($name) > 1) $insert['name'] = $name;
     if (isset($icao) && strlen($icao) > 1) $insert['icao'] = $icao;
     if (isset($iata) && strlen($iata) > 1) $insert['iata'] = $iata;
     if (isset($metar) && $metar === "X") $insert['metar'] = true;
