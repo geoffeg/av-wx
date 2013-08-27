@@ -12,5 +12,7 @@
                  [cheshire "5.2.0"]
                  [ring/ring-json "0.2.0"]
                  [clojure-csv/clojure-csv "2.0.1"]
-                 [org.clojure/algo.generic "0.1.1"]]
+                 [org.clojure/algo.generic "0.1.1"]
+                 [com.taoensso/timbre "2.6.0"]
+                 [org.clojure/tools.trace "0.7.6"]]
   :main av-wx.core)

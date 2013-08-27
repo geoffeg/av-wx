@@ -46,6 +46,10 @@
   (java.io.ByteArrayInputStream.
    (.getBytes (.trim string))))
 
+(defn update-vals [m k f]
+  ; update-in m with function f for the keys listed in k
+  (reduce #(update-in % [%2] f) m (filter #(get m %) k)))
+
 ;; KJFK to KSFO
 ;(km2nm (distance-between [40.6397511, -73.7789256] [37.6191050, -122.3752372]))
 ;(bearing-to ["40.6397511", "-73.7789256"] ["37.6191050", "-122.3752372"])
