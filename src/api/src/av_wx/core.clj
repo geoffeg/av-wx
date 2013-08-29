@@ -36,14 +36,14 @@
                        (build-response
                         (p :get-metar (reports/get-metars search)) remote-addr httploc)))))
 
-(defn get-taf [params] (response params))
+(defn get-taf [search qparams remote-addr] (response (reports/get-tafs search)))
 
 (defn in-dev? [args] true)
 
 (defroutes all-routes
   (GET "/" [] show-index-page)
   (GET "/metar/:search" [search :as {qparams :params remote-addr :remote-addr}] (get-metar search qparams remote-addr))
-  (GET "/taf/:search"  [search :as {qparams :params remote-addr :remote-addr}] (get-taf search))
+  (GET "/taf/:search"  [search :as {qparams :params remote-addr :remote-addr}] (get-taf search qparams remote-addr))
   ;(GET "/_loging/:level" [level] (timbre/set-level! level))
   (not-found "Fer oh fer, page not fernd!"))
 

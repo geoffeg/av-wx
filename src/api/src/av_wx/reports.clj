@@ -24,15 +24,15 @@
 (defn remove-empty-values [csvmap]
   (into {} (remove #(or (nil? (val %)) (and (string? (val %)) (clojure.string/blank? (val %)))) csvmap)))
 
-(defn fix-field-types [rows types]
+(defn- fix-field-types [rows types]
   (map
    (fn [row]
      (reduce-kv #(utils/update-vals %1 %3 %2) (remove-empty-values row) types))
    rows))
 
-(defn parse-report [csvlines]
+(defn parse-report [csvlines field-types]
   (let [csvrows (parse-csv (subs csvlines (.indexOf csvlines "raw_text")))]
-    (fix-field-types (map #(zipmap (first csvrows) %) (rest csvrows)) taf-field-types)))
+    (fix-field-types (map #(zipmap (first csvrows) %) (rest csvrows)) field-types)))
 
 (defn get-geoip-data [ipaddr]
   (let [{:keys [error status headers body]} @(http/get (str "http://freegeoip.net/json" ipaddr) {:as :text})]
@@ -51,13 +51,13 @@
   (let [{:keys [error status headers body]} @(http/get (str metar-url search) {:as :text})]
   (if error
     (println "ERROR!" error)
-     (parse-report body))))
+     (parse-report body metar-field-types))))
 
 (defn get-tafs [search]
   (let [{:keys [error status headers body]} @(http/get (str taf-url search) {:as :text})]
     (if error
       (println "ERROR!" error)
-      (parse-report body))))
+      (parse-report body taf-field-types))))
 
 ;(pprint (get-tafs "KSFO+KSTL"))
 ;(pprint (get-metars "KSFO"))
