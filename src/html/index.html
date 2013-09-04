@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<head>
+  <title>av-wx : mobile metar</title>
+
+  <link rel="stylesheet" href="css/reset.css" type="text/css">
+  <link rel="stylesheet" href="css/av-wx.css" type="text/css">
+  <link href='http://fonts.googleapis.com/css?family=Droid+Sans+Mono' rel='stylesheet' type='text/css'>
+  <link href="//netdna.bootstrapcdn.com/font-awesome/3.1.0/css/font-awesome.css" rel="stylesheet">
+  
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+  <script src="js/geoPosition.js" type="text/javascript" charset="utf-8"></script>
+  <script src="js/av-wx.js" type="text/javascript" charset="utf-8"></script>
+
+  </head>
+  <body>
+  <div id="header">
+    <a id="location-icon" href="#"><i class="icon-location-arrow"></i></a>
+    <a id="reload-icon" href="#"><i class="icon-repeat"></i></a>
+    <form>
+      <div id="search-container">
+      <i class="icon-search"></i>
+        <input type="text" id="search" placeholder="Zip, ICAOs or @MO"> 
+      </div>
+    </form>
+    <ul id="mode">
+      <li id="metar-mode" class="mode-selected">metar</li>
+      <li id="taf-mode">taf</li>
+    </ul>
+  </div>
+
+  <div id="metar-container">
+    <ul>
+    </ul>
+  </div>
+  <div id="loading-spinner"><i class="icon-spinner icon-spin icon-4x"></i></div>
+  <div id="legal-info">
+    <P>Site by <a href="mailto:avwx@geoffeg.org">Geoff Gallaway &lt;avwx@geoffeg.org&gt;</a></P>
+  </div>
+
+  <script>
+    (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+    (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+    m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+    })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+    ga('create', 'UA-74414-4', 'av-wx.com');
+    ga('send', 'pageview');
+
+  </script>
+  </body>
+</html>

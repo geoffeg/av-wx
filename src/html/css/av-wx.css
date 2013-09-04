@@ -1,0 +1,24 @@
+BODY { font-family: sans-serif; background-color: black; color: white}
+A:link, A:visited { color: white; text-decoration: none; }
+
+UL { list-style-type: none; margin: 0px; padding: 0px; }
+#metar-container LI { padding: 8px 2px; font-family: 'Droid Sans Mono', monospace; white-space: pre-wrap; font-size: 100% }
+#header LI { float: left; position: relative; padding: 2px; font-size: 20px;  }
+#search { margin: 0px; background: #000; padding: 6px; border: none; font-size: 18px; width: 80%; color: white  }
+form { margin: 0px; }
+#search-container { border: 2px solid #666; overflow: hidden; padding-left: 5px; margin-left: 10px;  -webkit-border-radius: 1px; -moz-border-radius: 1px; border-radius: 1px; }
+#header { margin: 10px; }
+#location-icon, #reload-icon { font-size: 26px; float: left; position: relative; top: 5px; padding-left: 10px; padding-right: 10px}
+#metar-container { clear: both; padding: 0px 10px 0px 10px }
+#mode { clear: both; }
+#mode LI { font-size: 38px; color: #666; padding-right: 20px; }
+#loading-spinner { margin-left: auto; margin-right: auto; width: 50px;  }
+#legal-info { font-size: 10px; padding: 10px;  }
+.icon-search { font-size: 20px }
+.mode-selected { color: #FFF !important }
+.position { font-size: 80%; color: #AAA; padding-top: 2px }
+.VFR { color: #44FF44; }
+.MVFR { color: #4444FF; }
+.IFR { color: #FF4444; }
+.LIFR { color: #FF44FF; }
+.VFR, .MVFR, .IFR, .LIFR { float: left; padding-right: 10px; }
