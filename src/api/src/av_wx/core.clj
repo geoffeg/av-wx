@@ -3,6 +3,7 @@
         [compojure.handler :only [site]]
         [compojure.core :only [defroutes GET POST ANY context]]
         [org.httpkit.server]
+        [clojure.pprint]
         [ring.middleware.json :only [wrap-json-response]]
         [ring.util.response :only [response]])
   (:require [ring.middleware.reload :as reload]
@@ -17,8 +18,10 @@
 ; If httparams were passed, just return those
 ; Otherwise use the geoip service
 (defn get-geo-data
-  ([ip httploc]
-   (if (every? nil? httploc) (get-geo-data ip) (mapv #(BigDecimal. %) httploc)))
+  ([ip {:keys [latitude longitude] :as httploc}]
+   (if (and latitude longitude)
+     [(BigDecimal. latitude) (BigDecimal. longitude)]
+     (get-geo-data ip)))
   ([ip]
    (if-let [geoip-data (reports/get-geoip-data ip)]
     (mapv geoip-data [:latitude :longitude]) nil)))
@@ -29,8 +32,7 @@
       "location" geo-data} reports))
 
 (defn get-metar [search qparams remote-addr]
-  (let [httploc (mapv qparams [:latitude :longitude])]
-    (println remote-addr)
+  (let [httploc (select-keys qparams [:latitude :longitude])]
     (sampling-profile :info 0.50 :get-metar
                       (response
                        (build-response

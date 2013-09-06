@@ -35,10 +35,10 @@
     (fix-field-types (map #(zipmap (first csvrows) %) (rest csvrows)) field-types)))
 
 (defn get-geoip-data [ipaddr]
-  (let [{:keys [error status headers body]} @(http/get (str "http://freegeoip.net/json" ipaddr) {:as :text})]
+  (let [{:keys [error status headers body]} @(http/get (str "http://freegeoip.net/json/" ipaddr) {:as :text})]
    (if error
      nil
-     (parse-string body true))))
+     (if (= status 200) (parse-string body true)))))
 
 (defn append-geo-data [reports src-coords]
   (mapv #(let [report-coords [(% "latitude") (% "longitude")]]
