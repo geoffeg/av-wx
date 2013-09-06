@@ -33,12 +33,17 @@
 
 (defn get-metar [search qparams remote-addr]
   (let [httploc (select-keys qparams [:latitude :longitude])]
-    (sampling-profile :info 0.50 :get-metar
+    (sampling-profile :info 0.10 :get-metar
                       (response
                        (build-response
                         (p :get-metar (reports/get-metars search)) remote-addr httploc)))))
 
-(defn get-taf [search qparams remote-addr] (response (reports/get-tafs search)))
+(defn get-taf [search qparams remote-addr]
+  (let [httploc (select-keys qparams [:latitude :longitude])]
+    (sampling-profile :info 0.10 :get-taf
+                      (response
+                       (build-response
+                        (p :get-taf (reports/get-tafs search)) remote-addr httploc)))))
 
 (defn in-dev? [args] true)
 
