@@ -6,3 +6,5 @@ pom.xml
 /targets/
 .DS_Store
 .lein-deps-sum
+
+src/.DS_Store
