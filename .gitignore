@@ -1,7 +1,8 @@
 pom.xml
 *jar
+*swp
 /lib/
 /classes/
 /targets/
-.lein-deps-sum
 .DS_Store
+.lein-deps-sum
