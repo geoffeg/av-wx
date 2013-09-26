@@ -12,30 +12,21 @@
 
 (mg/set-db! (mg/get-db (get-in utils/conf [:mongo :db])))
 
-(defn find-stations [latitude longitude mode]
+(defn find-stations [coords mode]
   (mapv
-    #(hash-map "icao" (get-in % ["obj" "icao"])
-               "name" (get-in % ["obj" "name"]))
-    (get-in (mg/command (sorted-map
+#(get-in % ["obj" "icao"])
+   (get-in (mg/command (sorted-map
                          :geoNear "stations"
-                         :near {:type "Point", :coordinates [longitude, latitude]}
+                         :near {:type "Point", :coordinates [(coords 1), (coords 0)]}
                          :query {mode true}
                          :limit 15
                          :spherical true))
             ["results"])))
 
-(defn find-stations-zipcode [zipcode mode]
+(defn find-coords-zipcode [zipcode mode]
   (let [[lon lat] ((mc/find-one-as-map "zipcodes" {:_id (str zipcode)} {:_id 0, :loc 1}) :loc)]
-    (find-stations lat lon mode)))
+    [lat lon]))
 
-(defn find-stations-ip [ipaddr mode]
+(defn find-coords-ip [ipaddr mode]
   (let [{lat :latitude lon :longitude} (reports/get-geoip-data ipaddr)]
-    (find-stations lat lon mode)))
-
-;(pprint (find-stations 37.62 -122.37 "metar"))
-;(pprint (find-stations 37.62 -122.37 "metar"))
-
-;(pprint (find-zipcode 63111))
-
-;(pprint (find-stations-zipcode 63111 "metar"))
-;(pprint (find-stations-ip "216.55.25.70" "metar"))
+    [lat lon]))

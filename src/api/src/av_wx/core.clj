@@ -16,40 +16,34 @@
 
 (defn show-index-page [args] "Meow!")
 
-; If httparams were passed, just return those
-; Otherwise use the geoip service
-(defn get-geo-data
-  ([ip {:keys [latitude longitude] :as httploc}]
-   (if (and latitude longitude)
-     [(BigDecimal. latitude) (BigDecimal. longitude)]
-     (get-geo-data ip)))
-  ([ip]
-   (if-let [geoip-data (reports/get-geoip-data ip)]
-    (mapv geoip-data [:latitude :longitude]) nil)))
+(defn get-geo-data [remote-addr geoloc]
+  (if (empty? geoloc)
+    (let [pos (reports/get-geoip-data "108.73.45.165")] (vector (BigDecimal. (pos :latitude)) (BigDecimal. (pos :longitude))))
+    (let [pos (clojure.string/split geoloc #",")] (vector (BigDecimal. (pos 0)) (BigDecimal. (pos 1))))))
 
-(defn build-response [reports ipaddr httploc]
-  (if-let [geo-data (get-geo-data ipaddr httploc)]
-    {"reports"  (reports/append-geo-data reports geo-data),
-      "location" geo-data} reports))
+(defn geo-response [reports loc]
+  (if (empty? loc) reports
+  (response
+    {"reports" (reports/append-geo-data reports loc),
+     "location" loc})))
+
+(defn- error-response [message]
+  (response {"ERROR" message}))
 
 (defn get-metar [search qparams remote-addr]
-  (let [httploc (select-keys qparams [:latitude :longitude])]
-    (println search)
-    (sampling-profile :info 0.10 :get-metar
-                      (response
-                       (build-response
-                        (p :get-metar (reports/get-metars search)) remote-addr httploc)))))
+  (let [httploc (get-geo-data remote-addr (get qparams :geo))
+        stations (clojure.string/split search #",")]
+    (geo-response (reports/get-metars stations) httploc)))
 
 (defn get-taf [search qparams remote-addr]
-  (let [httploc (select-keys qparams [:latitude :longitude])]
-    (sampling-profile :info 0.10 :get-taf
-                      (response
-                       (build-response
-                        (p :get-taf (reports/get-tafs search)) remote-addr httploc)))))
+  (let [httploc (get-geo-data remote-addr (get qparams :geo))
+        stations (clojure.string/split search #",")]
+      (geo-response (reports/get-tafs stations) httploc)))
 
-(defn get-search-results [qparams remote-addr]
-    (let [searchtypes {:zipcode #(db/find-stations-zipcode % "metar")
-                       :ip      #(db/find-stations-ip % "metar")}
+(defn get-location [qparams]
+    (let [searchtypes {:zipcode #(db/find-coords-zipcode % "metar")
+                       :ip      #(db/find-coords-ip % "metar")
+                       :geo     #(clojure.string/split % #",")}
           [k f] (first (select-keys searchtypes (keys qparams)))]
       (f (qparams k))))
 
@@ -59,17 +53,18 @@
   ;   geo=lat,lon        return airports within proximity of coords
   ;   ip=XXX.XXX.XXX.XXX airports within geolocation of IP address
   ;   ip=@detect         airports within geolocation of client IP
-    (let [search-results (get-search-results qparams remote-addr)]
-      (if (= remote-addr "@detect") (update-in qparams "ip" remote-addr))
-      (reports/get-metars (clojure.string/join "," (map #(get % "icao") search-results)))))
+  (when (= (get qparams :ip) "@detect") (assoc qparams :ip remote-addr))
+  (if-let [geoloc (get-location qparams)]
+      (geo-response (reports/get-metars (db/find-stations geoloc "metar")) geoloc)
+      (error-response "No valid location found for search criteria")))
 
 (defn in-dev? [args] (get-in utils/conf [:dev]))
 
 (defroutes all-routes
   (GET "/" [] show-index-page)
   (GET "/search" {qparams :params remote-addr :remote-addr} (search-metar qparams remote-addr))
-  (GET "/metar/:search" [search :as {qparams :params remote-addr :remote-addr}] (get-metar search qparams remote-addr))
-  (GET "/taf/:search"  [search :as {qparams :params remote-addr :remote-addr}] (get-taf search qparams remote-addr))
+  (GET "/metar/*" [* :as {qparams :params remote-addr :remote-addr}] (get-metar * qparams remote-addr))
+  (GET "/taf/*"  [* :as {qparams :params remote-addr :remote-addr}] (get-taf * qparams remote-addr))
   ;(GET "/_logging/:level" [level] (timbre/set-level! level))
   (not-found "Fer oh fer, page not fernd!"))
 
