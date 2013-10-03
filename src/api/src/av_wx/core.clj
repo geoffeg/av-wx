@@ -25,7 +25,7 @@
 (defn geo-response [reports loc]
   (if (empty? loc) reports
   (response
-    {"reports" (reports/append-geo-data reports loc),
+    {"reports" (sort-by #(get % "distance-from") (reports/append-geo-data reports loc)),
      "location" loc})))
 
 (defn- error-response [message]
