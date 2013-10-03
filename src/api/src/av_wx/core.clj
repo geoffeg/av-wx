@@ -19,7 +19,7 @@
 
 (defn get-geo-data [remote-addr geoloc]
   (if (empty? geoloc)
-    (let [pos (reports/get-geoip-data "108.73.45.165")] (vector (BigDecimal. (pos :latitude)) (BigDecimal. (pos :longitude))))
+    (let [pos (reports/get-geoip-data remote-addr)] (vector (BigDecimal. (pos :latitude)) (BigDecimal. (pos :longitude))))
     (let [pos (clojure.string/split geoloc #",")] (vector (BigDecimal. (pos 0)) (BigDecimal. (pos 1))))))
 
 (defn geo-response [reports loc]
@@ -42,21 +42,21 @@
       (geo-response (reports/get-tafs stations) httploc)))
 
 (defn get-location [qparams]
-    (let [searchtypes {:zipcode #(db/find-coords-zipcode "metar" %)
-                       :ip      #(db/find-coords-ip "metar" %)
+    (let [searchtypes {:zipcode #(db/find-coords-zipcode (qparams :type) %)
+                       :ip      #(db/find-coords-ip (qparams :type) %)
                        :geo     #(clojure.string/split % #",")}
           [k f] (first (select-keys searchtypes (keys qparams)))]
       (f (qparams k))))
 
 (defn search-weather [qparams remote-addr]
-  ; three search methods are currently supported:
+  ; three search methods are supported:
   ;   zipcode=XXXXX      return airports within proximity to zipcode
   ;   geo=lat,lon        return airports within proximity of coords
   ;   ip=XXX.XXX.XXX.XXX airports within geolocation of IP address
   ;   ip=@detect         airports within geolocation of client IP
   (when (= (get qparams :ip) "@detect") (assoc qparams :ip remote-addr))
   (let? [geoloc   (get-location qparams)                    :is-not nil? :else (error-response "could not find location")
-         stations (db/find-stations (qparams :type) geoloc) :is-not nil? :else (error-response "no stations found")
+         stations (db/find-stations (qparams :type) geoloc) :is-not nil? :else (error-response "no stations found for location")
          reports  (if
                     (= (qparams :type) "metar")
                     (reports/get-metars stations)

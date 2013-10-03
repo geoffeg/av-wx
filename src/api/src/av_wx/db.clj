@@ -6,22 +6,23 @@
   (:import [com.mongodb MongoOptions ServerAddress])
   (:use [clojure.pprint]))
 
-(let [^MongoOptions opts (mg/mongo-options :threads-allowed-to-block-for-connection-multiplier 300)
+(let [^MongoOptions opts (mg/mongo-options :threads-allowed-to-block-for-connection-multiplier 3)
       ^ServerAddress sa  (mg/server-address (get-in utils/conf [:mongo :host]) (get-in utils/conf [:mongo :port]))]
   (mg/connect! sa opts))
 
 (mg/set-db! (mg/get-db (get-in utils/conf [:mongo :db])))
 
 (defn find-stations [mode coords]
-  (mapv
-   #(get-in % ["obj" "icao"])
-   (get-in (mg/command (sorted-map
+  (if-let [results (mg/command (sorted-map
                          :geoNear "stations"
                          :near {:type "Point", :coordinates [(coords 1), (coords 0)]}
                          :query {mode true}
                          :limit 15
-                         :spherical true))
-            ["results"])))
+                         :spherical true))]
+    (if (contains? results "results")
+      (mapv #(get-in % ["obj" "icao"]) (get-in results ["results"]))
+      nil)
+    nil))
 
 (defn find-coords-zipcode [mode zipcode]
   (if-let [loc (mc/find-one-as-map "zipcodes" {:_id (str zipcode)} {:_id 0, :loc 1})]
