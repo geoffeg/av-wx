@@ -48,11 +48,11 @@
         reports))
 
 (defn get-metars [stations]
-  (if (empty? stations) [nil "No stations to retrieve"]
+;  (if (empty? stations) [nil "No stations to retrieve"]
   (let [{:keys [error status headers body]} @(http/get (str metar-url (clojure.string/join "," stations)) {:as :text})]
   (if error
     (println "ERROR!" error)
-     (parse-report body metar-field-types)))))
+     (parse-report body metar-field-types))))
 
 (defn get-tafs [stations]
   (let [{:keys [error status headers body]} @(http/get (str taf-url (clojure.string/join "," stations)) {:as :text})]

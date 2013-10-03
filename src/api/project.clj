@@ -14,5 +14,6 @@
                  [clojure-csv/clojure-csv "2.0.1"]
                  [org.clojure/algo.generic "0.1.1"]
                  [com.taoensso/timbre "2.6.0"]
+                 [egamble/let-else "1.0.6"]
                  [org.clojure/tools.trace "0.7.6"]]
   :main av-wx.core)

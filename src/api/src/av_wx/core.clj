@@ -4,6 +4,7 @@
         [compojure.core :only [defroutes GET POST ANY context]]
         [org.httpkit.server]
         [clojure.pprint]
+        [let-else]
         [ring.middleware.json :only [wrap-json-response]]
         [ring.util.response :only [response]])
   (:require [ring.middleware.reload :as reload]
@@ -41,28 +42,32 @@
       (geo-response (reports/get-tafs stations) httploc)))
 
 (defn get-location [qparams]
-    (let [searchtypes {:zipcode #(db/find-coords-zipcode % "metar")
-                       :ip      #(db/find-coords-ip % "metar")
+    (let [searchtypes {:zipcode #(db/find-coords-zipcode "metar" %)
+                       :ip      #(db/find-coords-ip "metar" %)
                        :geo     #(clojure.string/split % #",")}
           [k f] (first (select-keys searchtypes (keys qparams)))]
       (f (qparams k))))
 
-(defn search-metar [qparams remote-addr]
+(defn search-weather [qparams remote-addr]
   ; three search methods are currently supported:
   ;   zipcode=XXXXX      return airports within proximity to zipcode
   ;   geo=lat,lon        return airports within proximity of coords
   ;   ip=XXX.XXX.XXX.XXX airports within geolocation of IP address
   ;   ip=@detect         airports within geolocation of client IP
   (when (= (get qparams :ip) "@detect") (assoc qparams :ip remote-addr))
-  (if-let [geoloc (get-location qparams)]
-      (geo-response (reports/get-metars (db/find-stations geoloc "metar")) geoloc)
-      (error-response "No valid location found for search criteria")))
+  (let? [geoloc   (get-location qparams)                    :is-not nil? :else (error-response "could not find location")
+         stations (db/find-stations (qparams :type) geoloc) :is-not nil? :else (error-response "no stations found")
+         reports  (if
+                    (= (qparams :type) "metar")
+                    (reports/get-metars stations)
+                    (reports/get-tafs stations))            :is-not nil? :else (error-response "No reports found")]
+        (geo-response reports geoloc)))
 
 (defn in-dev? [args] (get-in utils/conf [:dev]))
 
 (defroutes all-routes
   (GET "/" [] show-index-page)
-  (GET "/search" {qparams :params remote-addr :remote-addr} (search-metar qparams remote-addr))
+  (GET "/search" {qparams :params remote-addr :remote-addr} (search-weather qparams remote-addr))
   (GET "/metar/*" [* :as {qparams :params remote-addr :remote-addr}] (get-metar * qparams remote-addr))
   (GET "/taf/*"  [* :as {qparams :params remote-addr :remote-addr}] (get-taf * qparams remote-addr))
   ;(GET "/_logging/:level" [level] (timbre/set-level! level))
