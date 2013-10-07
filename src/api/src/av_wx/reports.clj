@@ -1,10 +1,10 @@
 (ns av-wx.reports
   (:require [org.httpkit.client :as http]
             [cheshire.core :refer :all]
+            [taoensso.timbre :as timbre :refer (trace debug info warn error fatal spy with-log-level)]
             [av-wx.utils :as utils])
   (:use [clojure-csv.core :only [parse-csv]]
-        [clojure.pprint]
-        [clojure.tools.trace]))
+        [clojure.pprint]))
 
 (def metar-url "http://aviationweather.gov/adds/dataserver_current/httpparam?dataSource=metars&requestType=retrieve&format=csv&hoursBeforeNow=4&mostRecentForEachStation=true&stationString=")
 (def taf-url "http://aviationweather.gov/adds/dataserver_current/httpparam?dataSource=tafs&requestType=retrieve&format=csv&hoursBeforeNow=4&mostRecentForEachStation=true&stationString=")
@@ -48,7 +48,6 @@
         reports))
 
 (defn get-metars [stations]
-;  (if (empty? stations) [nil "No stations to retrieve"]
   (let [{:keys [error status headers body]} @(http/get (str metar-url (clojure.string/join "," stations)) {:as :text})]
   (if error
     (println "ERROR!" error)

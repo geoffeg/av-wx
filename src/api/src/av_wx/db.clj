@@ -12,6 +12,10 @@
 
 (mg/set-db! (mg/get-db (get-in utils/conf [:mongo :db])))
 
+(defn get-airport-info [airports]
+  (let [mongo-search {"$or" (mapv #(hash-map "ident" %) airports)}]
+    (mc/find-maps "airports" mongo-search {:_id 0, :name 1, :ident 1})))
+
 (defn find-stations [mode coords]
   (if-let [results (mg/command (sorted-map
                          :geoNear "stations"
@@ -31,3 +35,8 @@
 (defn find-coords-ip [mode ipaddr]
   (if-let [{lat :latitude lon :longitude} (reports/get-geoip-data ipaddr)]
     [lat lon] nil))
+
+(defn append-airport-info [reports]
+  (let [report-airports (mapv #(% "station_id") reports)
+        airport-info (get-airport-info report-airports)]
+    (clojure.set/join (clojure.set/rename airport-info {:ident "icao"}) reports {:icao "icao"})))

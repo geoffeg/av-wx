@@ -1,0 +1,26 @@
+Supported URLs:
+
+GET /metar/[station_ids][?geo=]
+--------------------
+   station_ids
+      list of stations in format defined as "stationString" from http://aviationweather.gov/adds/dataserver/metars/MetarExamples.php
+   geo
+      A lat,lon tuple in decimal degrees format to override the IP-address based-geolocation
+
+GET /taf/[station_ids][?geo=]
+------------------
+   station_ids
+      list of stations in format defined as "stationString" from http://aviationweather.gov/adds/dataserver/metars/MetarExamples.php
+   geo
+      A lat,lon tuple in decimal degrees format to override the IP-address based-geolocation
+
+GET /search?type=[metar|taf]&[zipcode|ip|geo]=
+------------------------------------------
+   type
+      One of either "metar" or "taf" to search for weather stations with that capability
+   zipcode
+      Any 5-digit US zipcode
+   ip
+      Any IPv4 IP address in dot-decimal notation. use `@detect` to use your public IP address.
+   geo
+      A lat,lon tuple in decimal degrees format

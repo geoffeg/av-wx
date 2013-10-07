@@ -15,7 +15,7 @@
             [taoensso.timbre :as timbre :refer (trace debug info warn error fatal spy with-log-level)]
             [taoensso.timbre.profiling :as profiling :refer (p profile sampling-profile)]))
 
-(defn show-index-page [args] "Meow!")
+(defn show-index-page [args] {:body (slurp "resources/index.txt") :headers {"Content-Type" "text/plain"}})
 
 (defn get-geo-data [remote-addr geoloc]
   (if (empty? geoloc)
@@ -25,7 +25,7 @@
 (defn geo-response [reports loc]
   (if (empty? loc) reports
   (response
-    {"reports" (sort-by #(get % "distance-from") (reports/append-geo-data reports loc)),
+    {"reports" (sort-by #(get % "distance-from") (reports/append-geo-data (db/append-airport-info reports) loc)),
      "location" loc})))
 
 (defn- error-response [message]
