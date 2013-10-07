@@ -16,4 +16,5 @@
                  [com.taoensso/timbre "2.6.0"]
                  [egamble/let-else "1.0.6"]
                  [org.clojure/tools.trace "0.7.6"]]
+  :jvm-opts ["-XX:+UseConcMarkSweepGC" "-Xmx512m"]
   :main av-wx.core)

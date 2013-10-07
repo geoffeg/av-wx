@@ -13,7 +13,7 @@
 (mg/set-db! (mg/get-db (get-in utils/conf [:mongo :db])))
 
 (defn get-airport-info [airports]
-  (let [mongo-search {"$or" (mapv #(hash-map "ident" %) airports)}]
+  (let [mongo-search {"ident" { "$in" airports}}]
     (mc/find-maps "airports" mongo-search {:_id 0, :name 1, :ident 1})))
 
 (defn find-stations [mode coords]
@@ -39,4 +39,4 @@
 (defn append-airport-info [reports]
   (let [report-airports (mapv #(% "station_id") reports)
         airport-info (get-airport-info report-airports)]
-    (clojure.set/join (clojure.set/rename airport-info {:ident "icao"}) reports {:icao "icao"})))
+    (clojure.set/join (clojure.set/rename airport-info {:ident "station_id"}) reports)))
