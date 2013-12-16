@@ -46,8 +46,8 @@
   ;   geo=lat,lon        return airports within proximity of coords
   ;   ip=XXX.XXX.XXX.XXX airports within geolocation of IP address
   ;   ip=@detect         airports within geolocation of client IP
-  (when (= (get qparams :ip) "@detect") (assoc qparams :ip remote-addr))
-  (let? [geoloc   (get-location qparams)                    :is-not nil? :else (error-response "could not find location")
+  (let? [search   (if (= (get qparams :ip) "@detect") (assoc qparams :ip remote-addr) qparams)
+         geoloc   (get-location search)                     :is-not nil? :else (error-response "could not find location")
          stations (db/find-stations (qparams :type) geoloc) :is-not nil? :else (error-response "no stations found for location")
          reports  (if
                     (= (qparams :type) "metar")
@@ -68,7 +68,6 @@
     (let [httploc (get-geo-data remote-addr (get qparams :geo))
         stations (clojure.string/split search #",")]
       (geo-response (reports/get-tafs stations) httploc))))
-
 
 (defroutes all-routes
   (GET "/" [] show-index-page)
