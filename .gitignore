@@ -8,3 +8,5 @@ pom.xml
 .lein-deps-sum
 
 src/.DS_Store
+
+.DS_Store
