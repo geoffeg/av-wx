@@ -31,22 +31,14 @@
 (defn- error-response [message]
   (response {"ERROR" message}))
 
-(defn get-metar [search qparams remote-addr]
-  (let [httploc (get-geo-data remote-addr (get qparams :geo))
-        stations (clojure.string/split search #",")]
-    (geo-response (reports/get-metars stations) httploc)))
-
-(defn get-taf [search qparams remote-addr]
-  (let [httploc (get-geo-data remote-addr (get qparams :geo))
-        stations (clojure.string/split search #",")]
-      (geo-response (reports/get-tafs stations) httploc)))
-
 (defn get-location [qparams]
     (let [searchtypes {:zipcode #(db/find-coords-zipcode (qparams :type) %)
                        :ip      #(db/find-coords-ip (qparams :type) %)
                        :geo     #(clojure.string/split % #",")}
           [k f] (first (select-keys searchtypes (keys qparams)))]
       (f (qparams k))))
+
+(defn in-dev? [args] (get-in utils/conf [:dev]))
 
 (defn search-weather [qparams remote-addr]
   ; three search methods are supported:
@@ -63,7 +55,20 @@
                     (reports/get-tafs stations))            :is-not nil? :else (error-response "No reports found")]
         (geo-response reports geoloc)))
 
-(defn in-dev? [args] (get-in utils/conf [:dev]))
+(defn get-metar [search qparams remote-addr]
+  (if (empty? search)
+    (search-weather {:type "metar", :ip "@detect"} remote-addr)
+    (let [httploc  (get-geo-data remote-addr (get qparams :geo))
+          stations (clojure.string/split search #",")]
+      (geo-response (reports/get-metars stations) httploc))))
+
+(defn get-taf [search qparams remote-addr]
+  (if (empty? search)
+    (search-weather {:type "taf", :ip "@detect"} remote-addr)
+    (let [httploc (get-geo-data remote-addr (get qparams :geo))
+        stations (clojure.string/split search #",")]
+      (geo-response (reports/get-tafs stations) httploc))))
+
 
 (defroutes all-routes
   (GET "/" [] show-index-page)
