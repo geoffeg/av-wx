@@ -43,8 +43,8 @@
 (defn append-geo-data [reports src-coords]
   (mapv #(let [report-coords [(% "latitude") (% "longitude")]]
           (assoc %
-            "distance_from" (utils/distance-between src-coords report-coords),
-            "bearing_to" (utils/bearing-to src-coords report-coords)))
+            "distanceFrom" (utils/distance-between src-coords report-coords),
+            "bearingTo" (utils/bearing-to src-coords report-coords)))
         reports))
 
 (defn get-metars [stations]

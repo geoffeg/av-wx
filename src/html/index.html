@@ -2,8 +2,8 @@
 <head>
   <title>av-wx : mobile metar</title>
 
-  <link rel="stylesheet" href="css/reset.css" type="text/css">
-  <link rel="stylesheet" href="css/av-wx.css" type="text/css">
+  <link rel="stylesheet" href="/css/reset.css" type="text/css">
+  <link rel="stylesheet" href="/css/av-wx.css" type="text/css">
   <link href='http://fonts.googleapis.com/css?family=Droid+Sans+Mono' rel='stylesheet' type='text/css'>
   <link href="//netdna.bootstrapcdn.com/font-awesome/3.1.0/css/font-awesome.css" rel="stylesheet">
   
@@ -13,7 +13,7 @@
   <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>  
   <script src="//cdnjs.cloudflare.com/ajax/libs/underscore.js/1.5.2/underscore-min.js"></script>
 	<script src="//cdnjs.cloudflare.com/ajax/libs/backbone.js/1.1.0/backbone-min.js"></script>
-  <script src="js/avwx.js" type="text/javascript" charset="utf-8"></script>
+  <script src="/js/avwx.js" type="text/javascript" charset="utf-8"></script>
 
   </head>
   <body>
@@ -41,8 +41,8 @@
 
 	<script type="text/template" id="report-template">
 		<div class="report"><%- raw_text %></div>
-    <div class="meta"><%- name %></div>
-    <div class="card"><%- Math.floor(distance_from) %> <%- cardinal_direction %></div>
+    <div class="airport-info"><%- name %></div>
+    <div class="meta"><span class="<%- flight_category %>"><%- flight_category %></span><%- Math.round(distanceFrom) %> miles <%- cardinal_direction %> - <%- report_age %> minutes old</div>
 	</script>
 
   <script type="text/template" id="reports-template">

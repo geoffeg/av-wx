@@ -1,36 +1,48 @@
 $(function(){
 
-	// Models //
-	var Metar = Backbone.Model.extend({
+	// Models, Collections //
+	var Report = Backbone.Model.extend({
 		url: function() {
 			return "/api/metar/"  + encodeURIComponent(this.id) + "?geo=38.5817,-90.295"
 		},
 		initialize: function() {
-			console.log('model init', this.attributes);
+//			console.log('model init', this.attributes);
 		},
 		cardinal_direction: function() {
-			var bearing = this.get("bearing_to");
+			var bearing = this.get("bearingTo");
 			var direction = Math.round(bearing/22.5);
 			var points = ["N","NNE","NE","ENE","E","ESE", "SE", "SSE","S","SSW","SW","WSW","W","WNW","NW","NNW"];
 			return points[(direction % 16)];
 		},
+		report_age: function() {
+			var ms_diff = new Date().getTime() - new Date(this.get("observation_time")).getTime();
+			return parseInt(ms_diff / 1000 / 60);
+		},
 		toTemplate: function() {
 			var j = this.toJSON();
 			j.cardinal_direction = this.cardinal_direction();
+			j.report_age = this.report_age();
 			return j;
 		}
 	});
 
-	var MetarCollection = Backbone.Collection.extend({
-		model: Metar,
-		url: "/api/metar/KSET,KSTL,KSUS?geo=38.5817,-90.295",
+	var ReportCollection = Backbone.Collection.extend({
+		model: Report,
+		initialize: function(models, options) {
+			this.query = options.query;
+		},
+
+		url: function() {
+			return "/api/metar/"  + encodeURIComponent(this.query) + "?geo=38.5817,-90.295"
+		},
+
 		parse: function(response, options){
 			return response.reports;
 		}
 	});
 
 	// Views //
-	var MetarView = Backbone.View.extend({
+	var ReportView = Backbone.View.extend({
 		tagName: "li",
 
 		template: _.template($("#report-template").html()),
@@ -46,7 +58,7 @@ $(function(){
 		}
 	});
 
-	var MetarsView = Backbone.View.extend({
+	var ReportsView = Backbone.View.extend({
 		tagName: 'ul',
 		//el: "#metar-container",
 		template: _.template($("#reports-template").html()),
@@ -57,9 +69,10 @@ $(function(){
 		},
 
 		render: function() {
-			this.collection.each(function(metar) {
-				var metarView = new MetarView({model: metar, className: "foo-" + metar.attributes.station_id});
-				this.$el.append(metarView.render().el);
+			this.$el.empty();
+			this.collection.each(function(report) {
+				var reportView = new ReportView({model: report, id: "metar-" + report.attributes.station_id});
+				this.$el.append(reportView.render().el);
 			}, this);
 			$('#metar-container').html(this.$el);
 			return this;
@@ -67,20 +80,33 @@ $(function(){
 	});
 
 	var AppRouter = Backbone.Router.extend({
+		searchInput: $("#search"),
 		routes: {
-			""          : "index",
-			"metar/:id" : "search",
+			""      : "index",
+			"m"     : "localMetars",
+			"m/:id" : "metar",
+			"t"     : "localTafs",
+			"t/:id" : "taf"
 		},
 
 		index: function() {
 			console.log("index");
 		},
 
-		search: function(search) {
-			var metar = new MetarCollection();
-			metar.fetch();
-			console.log(metar);
-			var reports = new MetarsView({collection : metar});
+		localMetars: function() {
+			var report = new ReportCollection();
+			report.fetch({update: true});
+			var reports = new ReportsView({collection : report});
+		},
+
+		metar: function(search) {
+			this.searchInput.val(search);
+			var report = new ReportCollection([], { query : search });
+			report.fetch({update: true});
+			var reports = new ReportsView({collection : report});
+			window.reportsRefresh = setInterval(function() {
+				report.fetch({update: true});
+			}, 60000);
 		},
 
 	});
@@ -95,7 +121,7 @@ $(function(){
 
 		initialize: function() {
 			this.router = new AppRouter();
-			Backbone.history.start();
+			Backbone.history.start({pushState: true});
 		},
 
 		showMetars: function() {

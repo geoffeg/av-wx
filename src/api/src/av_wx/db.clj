@@ -33,7 +33,8 @@
     [(last (loc :loc)) (first (loc :loc))] nil))
 
 (defn find-coords-ip [mode ipaddr]
-  (if-let [{lat :latitude lon :longitude} (reports/get-geoip-data ipaddr)]
+  (pprint (if (contains? #{"127.0.0.1" "::1"} ipaddr) "216.55.25.70" ipaddr))
+  (if-let [{lat :latitude lon :longitude} (reports/get-geoip-data (if (contains? #{"127.0.0.1" "::1"} ipaddr) "216.55.25.70" ipaddr))]
     [lat lon] nil))
 
 (defn append-airport-info [reports]
