@@ -28,12 +28,37 @@ $(function(){
 
 	var ReportCollection = Backbone.Collection.extend({
 		model: Report,
+
 		initialize: function(models, options) {
 			this.query = options.query;
 		},
 
+		findLocation : function() {
+			var model = this;
+
+			if (navigator.geolocation) {
+				navigator.geolocation.getCurrentPosition(geoSuccess, geoFailure, { timeout: 6000 });
+			}
+
+			function geoSuccess(position) {
+				model.latitude =  position.coords.latitude;
+				model.longitude = position.coords.longitude;
+				model.reset();
+			}
+
+			function geoFailure() {
+				console.log("Could not get geolocation")
+			}
+
+		},
+
 		url: function() {
-			return "/api/metar/"  + encodeURIComponent(this.query) + "?geo=38.5817,-90.295"
+			if (this.latitude) {
+				return "/api/metar/"  + encodeURIComponent(this.query) + "?geo=" + this.latitude + "," + this.longitude;
+			} else {
+				this.findLocation();
+				return "/api/metar/"  + encodeURIComponent(this.query);				
+			}
 		},
 
 		parse: function(response, options){
@@ -65,7 +90,12 @@ $(function(){
 
 		initialize: function() {
 			this.collection.on("add", this.render, this);
+			this.collection.on("reset", this.refresh, this);
 			//this.render();
+		},
+
+		refresh: function() {
+			this.collection.fetch({reset: false});
 		},
 
 		render: function() {
@@ -104,9 +134,9 @@ $(function(){
 			var report = new ReportCollection([], { query : search });
 			report.fetch({update: true});
 			var reports = new ReportsView({collection : report});
-			window.reportsRefresh = setInterval(function() {
-				report.fetch({update: true});
-			}, 60000);
+			// window.reportsRefresh = setInterval(function() {
+			// 	report.fetch({update: true});
+			// }, 60000);
 		},
 
 	});
@@ -133,8 +163,46 @@ $(function(){
 		}
 	});
 
+	
+	
 	var app = new AppView();
+
+	
 });
+
+
+var GeoLoc = (function() {
+	var latestPosition;
+	function positionSuccess(position) {
+		clearTimeout(this.lookupTimeout);
+		if (position.coords.latitude && position.coords.longitude) { 
+			this.latestPosition = position;
+		}
+		this.successCallback();
+	}
+
+	function positionError(error) {
+		// TODO don't use null
+		this.latestPosition = null;
+	}
+
+	var exports = {};
+
+	exports.lookup = function (successCallback, failureCallback) {
+		this.successCallback = successCallback;
+		this.failureCallback = failureCallback;
+		if (navigator.geolocation) {
+			navigator.geolocation.getCurrentPosition(this.positionSuccess, this.positionError, { timeout: 6000 });
+		}
+
+		if (this.latestPosition) {
+			return this.latestPosition;
+		} else {
+		}
+	}
+
+	Lookup.prototype.return
+})
 
 /*
 function avwx() {

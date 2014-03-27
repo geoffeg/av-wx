@@ -42,7 +42,9 @@
 	<script type="text/template" id="report-template">
 		<div class="report"><%- raw_text %></div>
     <div class="airport-info"><%- name %></div>
-    <div class="meta"><span class="<%- flight_category %>"><%- flight_category %></span><%- Math.round(distanceFrom) %> miles <%- cardinal_direction %> - <%- report_age %> minutes old</div>
+    <div class="meta">
+      <% if (typeof(flight_category) != "undefined") { %><span class="<%- flight_category %>"><%- flight_category %></span><% } %>
+      <%- Math.round(distanceFrom) %> miles <%- cardinal_direction %> - <%- report_age %> minutes old</div>
 	</script>
 
   <script type="text/template" id="reports-template">
