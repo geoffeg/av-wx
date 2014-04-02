@@ -30,12 +30,16 @@ $(function(){
 		model: Report,
 
 		initialize: function(models, options) {
-			this.query = options.query;
+			if (options)
+				this.query = options.query;
 			// this.findLocation();
 		},
 
 		url: function() {
-			return "/api/metar/"  + encodeURIComponent(this.query);				
+			if (this.query)
+				return "/api/metar/"  + encodeURIComponent(this.query);
+			else
+				return "/api/metar/";				
 		},
 
 		parse: function(response, options){
@@ -94,6 +98,12 @@ $(function(){
 			"t"     : "localTafs",
 			"t/:id" : "taf"
 		},
+		execute: function(callback, args) {
+			// Cancel the auto-refresh timer
+			console.log("execute");
+			clearTimeout(this.reportsRefresh);
+			if (callback) callback.apply(this, args);
+		},
 
 		index: function() {
 			console.log("index");
@@ -101,13 +111,31 @@ $(function(){
 
 		localMetars: function() {
 			var report = new ReportCollection();
-			report.fetch({update: true});
+			var router = this;
+			if (navigator.geolocation) {
+				navigator.geolocation.getCurrentPosition(geoSuccess, geoFailure, { timeout: 5000 });
+			}
+
+			function geoSuccess(position) {
+				console.log("got location")
+				report.fetch({update: true, data : { "latitude" : position.coords.latitude, "longitude" : position.coords.longitude}});
+			}
+
+			function geoFailure() {
+				console.log("Could not get geolocation");
+				report.fetch({update: true});
+			}
 			var reports = new ReportsView({collection : report});
+			router.reportsRefresh = setTimeout(function() {
+				console.log("refresh via localMetars");
+				router.localMetars();
+			}, 60000);
 		},
 
 		metar: function(search) {
 			this.searchInput.val(search);
 			var report = new ReportCollection([], { query : search });
+			var router = this;
 
 			if (navigator.geolocation) {
 				navigator.geolocation.getCurrentPosition(geoSuccess, geoFailure, { timeout: 5000 });
@@ -123,11 +151,11 @@ $(function(){
 				report.fetch({update: true});
 			}
 			var reports = new ReportsView({collection : report});
-			// window.reportsRefresh = setInterval(function() {
-			// 	report.fetch({update: true});
-			// }, 60000);
-		},
-
+			router.reportsRefresh = setTimeout(function() {
+				console.log("refresh via metars");
+				router.metar(search);
+			}, 60000);
+		}
 	});
 
 	var AppView = Backbone.View.extend({
@@ -151,68 +179,6 @@ $(function(){
 			this.router.navigate("taf", true)
 		}
 	});
-
-	
 	
 	var app = new AppView();
-
-	
 });
-
-
-var GeoLoc = (function() {
-	var latestPosition;
-	function positionSuccess(position) {
-		clearTimeout(this.lookupTimeout);
-		if (position.coords.latitude && position.coords.longitude) { 
-			this.latestPosition = position;
-		}
-		this.successCallback();
-	}
-
-	function positionError(error) {
-		// TODO don't use null
-		this.latestPosition = null;
-	}
-
-	var exports = {};
-
-	exports.lookup = function (successCallback, failureCallback) {
-		this.successCallback = successCallback;
-		this.failureCallback = failureCallback;
-		if (navigator.geolocation) {
-			navigator.geolocation.getCurrentPosition(this.positionSuccess, this.positionError, { timeout: 6000 });
-		}
-
-		if (this.latestPosition) {
-			return this.latestPosition;
-		} else {
-		}
-	}
-
-	Lookup.prototype.return
-})
-
-/*
-function avwx() {
-
-	var t = {};
-
-	function getStationDirection() {
-		var direction = Math.round(stationData.bearing/22.5);
-		var points = ["N","NNE","NE","ENE","E","ESE", "SE", "SSE","S","SSW","SW","WSW","W","WNW","NW","NNW"];
-
-		return points[(direction % 16)];
-	}
-
-	function getZuluTime() {
-		var now = new Date();
-		return now.getUTCHours() + ":" + now.getUTCMinutes() + "Z";
-	}
-
-	t.updateReportAges = function() {
-
-	}
-
-	return t;
-}*/
