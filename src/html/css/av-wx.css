@@ -11,7 +11,7 @@ form { margin: 0px; }
 #location-icon, #reload-icon { font-size: 26px; float: left; position: relative; top: 5px; padding-left: 10px; padding-right: 10px}
 #metar-container { clear: both; padding: 0px 10px 0px 10px }
 #mode { clear: both; }
-.airport-info { font-size: 80%; line-height: 1.4;}
+.airport-info { font-size: 80%; line-height: 1.4; color: #AAA;}
 #mode LI { font-size: 38px; color: #666; padding-right: 20px; }
 #loading-spinner { margin-left: auto; margin-right: auto; width: 50px;  }
 #legal-info { font-size: 10px; padding: 10px;  }

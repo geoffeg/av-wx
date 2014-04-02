@@ -31,34 +31,11 @@ $(function(){
 
 		initialize: function(models, options) {
 			this.query = options.query;
-		},
-
-		findLocation : function() {
-			var model = this;
-
-			if (navigator.geolocation) {
-				navigator.geolocation.getCurrentPosition(geoSuccess, geoFailure, { timeout: 6000 });
-			}
-
-			function geoSuccess(position) {
-				model.latitude =  position.coords.latitude;
-				model.longitude = position.coords.longitude;
-				model.reset();
-			}
-
-			function geoFailure() {
-				console.log("Could not get geolocation")
-			}
-
+			// this.findLocation();
 		},
 
 		url: function() {
-			if (this.latitude) {
-				return "/api/metar/"  + encodeURIComponent(this.query) + "?geo=" + this.latitude + "," + this.longitude;
-			} else {
-				this.findLocation();
-				return "/api/metar/"  + encodeURIComponent(this.query);				
-			}
+			return "/api/metar/"  + encodeURIComponent(this.query);				
 		},
 
 		parse: function(response, options){
@@ -91,7 +68,6 @@ $(function(){
 		initialize: function() {
 			this.collection.on("add", this.render, this);
 			this.collection.on("reset", this.refresh, this);
-			//this.render();
 		},
 
 		refresh: function() {
@@ -132,7 +108,20 @@ $(function(){
 		metar: function(search) {
 			this.searchInput.val(search);
 			var report = new ReportCollection([], { query : search });
-			report.fetch({update: true});
+
+			if (navigator.geolocation) {
+				navigator.geolocation.getCurrentPosition(geoSuccess, geoFailure, { timeout: 5000 });
+			}
+
+			function geoSuccess(position) {
+				console.log("got location")
+				report.fetch({update: true, data : { "latitude" : position.coords.latitude, "longitude" : position.coords.longitude}});
+			}
+
+			function geoFailure() {
+				console.log("Could not get geolocation");
+				report.fetch({update: true});
+			}
 			var reports = new ReportsView({collection : report});
 			// window.reportsRefresh = setInterval(function() {
 			// 	report.fetch({update: true});
