@@ -293,11 +293,23 @@ $(function(){
 		},
 
 		showMetars: function() {
-			this.router.navigate("m", {trigger: true});
+			var searchValue = $("#search").val();
+			var currentRoute = this.router.current().route;
+			if (currentRoute == "localTafs") {
+				this.router.navigate("m", {trigger: true})
+			} else if (currentRoute == "taf") {
+				this.router.navigate("m/" + searchValue, {trigger: true});
+			}
 		},
 
 		showTafs: function() {
-			this.router.navigate("t", {trigger: true})
+			var searchValue = $("#search").val();
+			var currentRoute = this.router.current().route;
+			if (currentRoute == "localMetars") {
+				this.router.navigate("t", {trigger: true});
+			} else if (currentRoute == "metar") {
+				this.router.navigate("t/" + searchValue, {trigger: true});
+			}		
 		},
 
 		search: function(e) {
@@ -313,6 +325,7 @@ $(function(){
 
 		location: function() {
 			var currentRoute = this.router.current().route;
+			$("#search").val("")
 			if (currentRoute == "localMetars" || currentRoute == "metar") {
 				this.router.navigate("m", {trigger: true});
 			} else if (currentRoute == "localTafs" || currentRoute == "tafs") {
