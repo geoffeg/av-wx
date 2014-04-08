@@ -56,7 +56,7 @@ $(function(){
 		},
 
 		url: function() {
-			var apiUrl = "http://api.av-wx.com";
+			var apiUrl = "http://dev.av-wx.com";
 			if (window.location.host.match("^local")) {
 				apiUrl = "http://local.api.av-wx.com";
 			}
@@ -76,7 +76,7 @@ $(function(){
 		model: Taf,
 
 		url: function() {
-			var apiUrl = "http://api.av-wx.com";
+			var apiUrl = "http://dev.av-wx.com";
 			if (window.location.host.match("^local")) {
 				apiUrl = "http://local.api.av-wx.com";
 			}
