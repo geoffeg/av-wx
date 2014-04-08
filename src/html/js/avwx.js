@@ -1,5 +1,4 @@
 $(function(){
-
 	// Models, Collections //
 	var Report = Backbone.Model.extend({
 		url: function() {
@@ -57,10 +56,15 @@ $(function(){
 		},
 
 		url: function() {
+			var apiUrl = "http://api.av-wx.com";
+			if (window.location.host.match("^local")) {
+				apiUrl = "http://local.api.av-wx.com/api";
+			}
+
 			if (this.query)
-				return "/api/metar/"  + encodeURIComponent(this.query);
+				return apiUrl + "/metar/"  + encodeURIComponent(this.query);
 			else
-				return "/api/metar/";				
+				return apiUrl + "/metar/";				
 		},
 
 		parse: function(response, options){
