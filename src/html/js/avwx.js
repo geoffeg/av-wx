@@ -58,13 +58,13 @@ $(function(){
 		url: function() {
 			var apiUrl = "http://api.av-wx.com";
 			if (window.location.host.match("^local")) {
-				apiUrl = "http://local.api.av-wx.com/api";
+				apiUrl = "http://local.api.av-wx.com";
 			}
 
 			if (this.query)
-				return apiUrl + "/metar/"  + encodeURIComponent(this.query);
+				return apiUrl + "/api/metar/"  + encodeURIComponent(this.query);
 			else
-				return apiUrl + "/metar/";				
+				return apiUrl + "/api/metar/";				
 		},
 
 		parse: function(response, options){
@@ -76,10 +76,15 @@ $(function(){
 		model: Taf,
 
 		url: function() {
+			var apiUrl = "http://api.av-wx.com";
+			if (window.location.host.match("^local")) {
+				apiUrl = "http://local.api.av-wx.com";
+			}
+
 			if (this.query) {
-				return "/api/taf/" + encodeURIComponent(this.query);
+				return apiUrl + "/api/taf/" + encodeURIComponent(this.query);
 			} else {
-				return "/api/taf/";
+				return apiUrl + "/api/taf/";
 			}
 		}
 	});
