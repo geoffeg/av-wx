@@ -3,7 +3,7 @@ $(function(){
 	// Models, Collections //
 	var Report = Backbone.Model.extend({
 		url: function() {
-			return "/api/metar/"  + encodeURIComponent(this.id) + "?geo=38.5817,-90.295"
+			return "/api/metar/"  + encodeURIComponent(this.id);
 		},
 		initialize: function() {
 //			console.log('model init', this.attributes);
@@ -26,6 +26,27 @@ $(function(){
 		}
 	});
 
+	// TODO: Just extend report for both Taf and Metar
+	var Taf = Report.extend({
+		url: function() {
+			return "/api/taf/" + encodeURIComponent(this.id);
+		},
+		report_age: function() {
+			var ms_diff = new Date().getTime() - new Date(this.get("issue_time")).getTime();
+			return parseInt(ms_diff / 1000 / 60);
+		},
+		raw_text: function() {
+			return this.get("raw_text").replace(/(TEMPO|BECMG|FM[0-9]{6})/gi, "\n $1");
+		},
+		toTemplate: function() {
+			var j = this.toJSON();
+			j.raw_text = this.raw_text();
+			j.report_age = this.report_age();
+			j.cardinal_direction = this.cardinal_direction();
+			return j;
+		}
+	});
+
 	var ReportCollection = Backbone.Collection.extend({
 		model: Report,
 
@@ -44,6 +65,18 @@ $(function(){
 
 		parse: function(response, options){
 			return response.reports;
+		}
+	});
+
+	var TafCollection = ReportCollection.extend({
+		model: Taf,
+
+		url: function() {
+			if (this.query) {
+				return "/api/taf/" + encodeURIComponent(this.query);
+			} else {
+				return "/api/taf/";
+			}
 		}
 	});
 
@@ -92,7 +125,7 @@ $(function(){
 	var AppRouter = Backbone.Router.extend({
 		searchInput: $("#search"),
 		routes: {
-			""      : "index",
+			""      : "localMetars",
 			"m"     : "localMetars",
 			"m/:id" : "metar",
 			"t"     : "localTafs",
@@ -112,6 +145,9 @@ $(function(){
 		localMetars: function() {
 			var report = new ReportCollection();
 			var router = this;
+			$("#taf-mode").removeClass("mode-selected");
+			$("#metar-mode").addClass("mode-selected")
+
 			if (navigator.geolocation) {
 				navigator.geolocation.getCurrentPosition(geoSuccess, geoFailure, { timeout: 5000 });
 			}
@@ -119,13 +155,14 @@ $(function(){
 			function geoSuccess(position) {
 				console.log("got location")
 				report.fetch({update: true, data : { "latitude" : position.coords.latitude, "longitude" : position.coords.longitude}});
+				var reports = new ReportsView({collection : report});
 			}
 
 			function geoFailure() {
 				console.log("Could not get geolocation");
 				report.fetch({update: true});
+				var reports = new ReportsView({collection : report});
 			}
-			var reports = new ReportsView({collection : report});
 			router.reportsRefresh = setTimeout(function() {
 				console.log("refresh via localMetars");
 				router.localMetars();
@@ -134,6 +171,9 @@ $(function(){
 
 		metar: function(search) {
 			this.searchInput.val(search);
+			$("#taf-mode").removeClass("mode-selected");
+			$("#metar-mode").addClass("mode-selected")
+
 			var report = new ReportCollection([], { query : search });
 			var router = this;
 
@@ -144,17 +184,96 @@ $(function(){
 			function geoSuccess(position) {
 				console.log("got location")
 				report.fetch({update: true, data : { "latitude" : position.coords.latitude, "longitude" : position.coords.longitude}});
+				var reports = new ReportsView({collection : report});
 			}
 
 			function geoFailure() {
 				console.log("Could not get geolocation");
 				report.fetch({update: true});
+				var reports = new ReportsView({collection : report});
 			}
-			var reports = new ReportsView({collection : report});
 			router.reportsRefresh = setTimeout(function() {
 				console.log("refresh via metars");
 				router.metar(search);
 			}, 60000);
+		},
+
+		localTafs: function(search) {
+			console.log("taf")
+			$("#taf-mode").addClass("mode-selected");
+			$("#metar-mode").removeClass("mode-selected")
+			var report = new TafCollection();
+			var router = this;
+
+			if (navigator.geolocation) {
+				navigator.geolocation.getCurrentPosition(geoSuccess, geoFailure, { timeout: 5000 });
+			}
+
+			function geoSuccess(position) {
+				console.log("taf got location");
+				report.fetch({update: true, data: { "latitude" : position.coords.latitude, "longitude" : position.coords.longitude }});
+				var reports = new ReportsView({collection : report});
+			}
+
+			function geoFailure() {
+				console.log("taf geolocation failed");
+				report.fetch({update : true});
+				var reports = new ReportsView({collection : report});
+			}
+			router.reportsRefresh = setTimeout(function() {
+				console.log("refresh via metars");
+				router.localTaf();
+			}, 60000);
+		},
+
+		taf: function(search) {
+			console.log("taf")
+			$("#taf-mode").addClass("mode-selected");
+			$("#metar-mode").removeClass("mode-selected")
+			var report = new TafCollection([], { query : search });
+			var router = this;
+
+			if (navigator.geolocation) {
+				navigator.geolocation.getCurrentPosition(geoSuccess, geoFailure, { timeout: 5000 });
+			}
+
+			function geoSuccess(position) {
+				console.log("taf got location");
+				report.fetch({update: true, data: { "latitude" : position.coords.latitude, "longitude" : position.coords.longitude }});
+				var reports = new ReportsView({collection : report});
+			}
+
+			function geoFailure() {
+				console.log("taf geolocation failed");
+				report.fetch({update : true});
+				var reports = new ReportsView({collection : report});
+			}
+			router.reportsRefresh = setTimeout(function() {
+				console.log("refresh via metars");
+				router.taf(search);
+			}, 60000);
+		},
+		current : function() {
+			var Router = this,
+				fragment = Backbone.history.fragment,
+				routes = _.pairs(Router.routes),
+				route = null, params = null, matched;
+
+			matched = _.find(routes, function(handler) {
+				route = _.isRegExp(handler[0]) ? handler[0] : Router._routeToRegExp(handler[0]);
+				return route.test(fragment);
+			});
+
+			if(matched) {
+       			params = Router._extractParameters(route, fragment);
+        		route = matched[1];
+    		}
+
+    		return {
+    			route : route,
+    			fragment : fragment,
+    			params : params
+   			 };
 		}
 	});
 
@@ -164,6 +283,8 @@ $(function(){
 		events: {
 			'click ul#mode li#metar-mode' : 'showMetars',
 			'click ul#mode li#taf-mode'   : 'showTafs',
+			'submit'                      : 'search',
+			'click #location-icon'        : 'location',
 		},
 
 		initialize: function() {
@@ -172,11 +293,31 @@ $(function(){
 		},
 
 		showMetars: function() {
-			this.router.navigate("metar", true);
+			this.router.navigate("m", {trigger: true});
 		},
 
 		showTafs: function() {
-			this.router.navigate("taf", true)
+			this.router.navigate("t", {trigger: true})
+		},
+
+		search: function(e) {
+			e.preventDefault();
+			var searchValue = $("#search").val();
+			var currentRoute = this.router.current().route;
+			if (currentRoute == "localMetars" || currentRoute == "metar") {
+				this.router.navigate("m/" + searchValue, {trigger: true});
+			} else if (currentRoute == "localTafs" || currentRoute == "tafs") {
+				this.router.navigate("t/" + searchValue, {trigger: true});
+			}
+		},
+
+		location: function() {
+			var currentRoute = this.router.current().route;
+			if (currentRoute == "localMetars" || currentRoute == "metar") {
+				this.router.navigate("m", {trigger: true});
+			} else if (currentRoute == "localTafs" || currentRoute == "tafs") {
+				this.router.navigate("t", {trigger: true});
+			}
 		}
 	});
 	
