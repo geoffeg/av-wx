@@ -98,31 +98,35 @@ $(function(){
 	});
 
 	var ReportsView = Backbone.View.extend({
+		poller_options : { delay: 60000, delayed: true },
 		tagName: 'ul',
-		//el: "#metar-container",
 		template: _.template($("#reports-template").html()),
 
 		initialize: function() {
+			Backbone.Poller.reset();
+			var view = this;
 			this.collection.on("add", this.render, this);
-			this.collection.on("reset", this.refresh, this);
-		},
-
-		refresh: function() {
-			this.collection.fetch({reset: false});
+			this.poller = Backbone.Poller.get(this.collection, view.poller_options);
+			this.poller.on('success', function(model) {
+				view.render(model);
+			});
 		},
 
 		render: function() {
 			this.$el.empty();
 			this.collection.each(function(report) {
-				var reportView = new ReportView({model: report, id: "metar-" + report.attributes.station_id});
+				var reportView = new ReportView({model: report, id: "report-" + report.attributes.station_id});
 				this.$el.append(reportView.render().el);
 			}, this);
 			$('#metar-container').html(this.$el);
+			this.poller.start();
+
 			return this;
 		}
 	});
 
 	var AppRouter = Backbone.Router.extend({
+
 		searchInput: $("#search"),
 		routes: {
 			""      : "localMetars",
@@ -131,13 +135,7 @@ $(function(){
 			"t"     : "taf",
 			"t/:id" : "taf"
 		},
-		execute: function(callback, args) {
-			// Cancel the auto-refresh timer
-			console.log("execute");
-			clearTimeout(this.reportsRefresh);
-			if (callback) callback.apply(this, args);
-		},
-
+		
 		metar: function(search) {
 			this.searchInput.val(search);
 			$("#taf-mode").removeClass("mode-selected");
@@ -145,28 +143,21 @@ $(function(){
 
 			var report = new MetarCollection([], { query : search });
 			var router = this;
+			var poller;
 
 			if (navigator.geolocation) {
 				navigator.geolocation.getCurrentPosition(geoSuccess, geoFailure, { timeout: 5000 });
 			}
 
 			function geoSuccess(position) {
-				console.log("got location")
 				report.fetch({update: true, data : { "latitude" : position.coords.latitude, "longitude" : position.coords.longitude}});
 				var reports = new ReportsView({collection : report});
 			}
 
 			function geoFailure() {
-				console.log("Could not get geolocation");
 				report.fetch({update: true});
 				var reports = new ReportsView({collection : report});
 			}
-			console.log(router.reportsRefresh);
-			clearTimeout(router.reportsRefresh);
-			router.reportsRefresh = setTimeout(function() {
-				console.log("refresh via metars");
-				router.metar(search);
-			}, 60000);
 		},
 
 		taf: function(search) {
@@ -182,21 +173,16 @@ $(function(){
 			}
 
 			function geoSuccess(position) {
-				console.log("taf got location");
 				report.fetch({update: true, data: { "latitude" : position.coords.latitude, "longitude" : position.coords.longitude }});
 				var reports = new ReportsView({collection : report});
 			}
 
 			function geoFailure() {
-				console.log("taf geolocation failed");
 				report.fetch({update : true});
 				var reports = new ReportsView({collection : report});
 			}
-			router.reportsRefresh = setTimeout(function() {
-				console.log("refresh via metars");
-				router.taf(search);
-			}, 60000);
 		},
+
 		current : function() {
 			var Router = this,
 				fragment = Backbone.history.fragment,
