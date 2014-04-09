@@ -129,7 +129,7 @@ $(function(){
 
 		searchInput: $("#search"),
 		routes: {
-			""      : "localMetars",
+			""      : "metar",
 			"m"     : "metar",
 			"m/:id" : "metar",
 			"t"     : "taf",
