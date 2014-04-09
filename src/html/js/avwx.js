@@ -1,17 +1,17 @@
 $(function(){
-	// Models, Collections //
+	// Models
 	var Report = Backbone.Model.extend({
-		url: function() {
-			return "/api/metar/"  + encodeURIComponent(this.id);
-		},
-		initialize: function() {
-//			console.log('model init', this.attributes);
-		},
 		cardinal_direction: function() {
 			var bearing = this.get("bearingTo");
 			var direction = Math.round(bearing/22.5);
 			var points = ["N","NNE","NE","ENE","E","ESE", "SE", "SSE","S","SSW","SW","WSW","W","WNW","NW","NNW"];
 			return points[(direction % 16)];
+		}
+	});
+
+	var Metar = Report.extend({
+		url: function() {
+			return "/api/metar/"  + encodeURIComponent(this.id);
 		},
 		report_age: function() {
 			var ms_diff = new Date().getTime() - new Date(this.get("observation_time")).getTime();
@@ -46,45 +46,36 @@ $(function(){
 		}
 	});
 
+	// Collections
 	var ReportCollection = Backbone.Collection.extend({
-		model: Report,
-
 		initialize: function(models, options) {
 			if (options)
 				this.query = options.query;
-			// this.findLocation();
 		},
-
-		url: function() {
-			var apiUrl = "http://dev.av-wx.com";
-			if (window.location.host.match("^local")) {
-				apiUrl = "http://local.api.av-wx.com";
-			}
-
-			if (this.query)
-				return apiUrl + "/api/metar/"  + encodeURIComponent(this.query);
-			else
-				return apiUrl + "/api/metar/";				
-		},
-
 		parse: function(response, options){
 			return response.reports;
 		}
+	});
+
+	var MetarCollection = ReportCollection.extend({
+		model: Metar,
+
+		url: function() {
+			if (this.query)
+				return "/api/metar/"  + encodeURIComponent(this.query);
+			else
+				return "/api/metar/";				
+		},
 	});
 
 	var TafCollection = ReportCollection.extend({
 		model: Taf,
 
 		url: function() {
-			var apiUrl = "http://dev.av-wx.com";
-			if (window.location.host.match("^local")) {
-				apiUrl = "http://local.api.av-wx.com";
-			}
-
 			if (this.query) {
-				return apiUrl + "/api/taf/" + encodeURIComponent(this.query);
+				return "/api/taf/" + encodeURIComponent(this.query);
 			} else {
-				return apiUrl + "/api/taf/";
+				return "/api/taf/";
 			}
 		}
 	});
@@ -135,9 +126,9 @@ $(function(){
 		searchInput: $("#search"),
 		routes: {
 			""      : "localMetars",
-			"m"     : "localMetars",
+			"m"     : "metar",
 			"m/:id" : "metar",
-			"t"     : "localTafs",
+			"t"     : "taf",
 			"t/:id" : "taf"
 		},
 		execute: function(callback, args) {
@@ -147,43 +138,12 @@ $(function(){
 			if (callback) callback.apply(this, args);
 		},
 
-		index: function() {
-			console.log("index");
-		},
-
-		localMetars: function() {
-			var report = new ReportCollection();
-			var router = this;
-			$("#taf-mode").removeClass("mode-selected");
-			$("#metar-mode").addClass("mode-selected")
-
-			if (navigator.geolocation) {
-				navigator.geolocation.getCurrentPosition(geoSuccess, geoFailure, { timeout: 5000 });
-			}
-
-			function geoSuccess(position) {
-				console.log("got location")
-				report.fetch({update: true, data : { "latitude" : position.coords.latitude, "longitude" : position.coords.longitude}});
-				var reports = new ReportsView({collection : report});
-			}
-
-			function geoFailure() {
-				console.log("Could not get geolocation");
-				report.fetch({update: true});
-				var reports = new ReportsView({collection : report});
-			}
-			router.reportsRefresh = setTimeout(function() {
-				console.log("refresh via localMetars");
-				router.localMetars();
-			}, 60000);
-		},
-
 		metar: function(search) {
 			this.searchInput.val(search);
 			$("#taf-mode").removeClass("mode-selected");
 			$("#metar-mode").addClass("mode-selected")
 
-			var report = new ReportCollection([], { query : search });
+			var report = new MetarCollection([], { query : search });
 			var router = this;
 
 			if (navigator.geolocation) {
@@ -201,44 +161,19 @@ $(function(){
 				report.fetch({update: true});
 				var reports = new ReportsView({collection : report});
 			}
+			console.log(router.reportsRefresh);
+			clearTimeout(router.reportsRefresh);
 			router.reportsRefresh = setTimeout(function() {
 				console.log("refresh via metars");
 				router.metar(search);
 			}, 60000);
 		},
 
-		localTafs: function(search) {
-			console.log("taf")
-			$("#taf-mode").addClass("mode-selected");
-			$("#metar-mode").removeClass("mode-selected")
-			var report = new TafCollection();
-			var router = this;
-
-			if (navigator.geolocation) {
-				navigator.geolocation.getCurrentPosition(geoSuccess, geoFailure, { timeout: 5000 });
-			}
-
-			function geoSuccess(position) {
-				console.log("taf got location");
-				report.fetch({update: true, data: { "latitude" : position.coords.latitude, "longitude" : position.coords.longitude }});
-				var reports = new ReportsView({collection : report});
-			}
-
-			function geoFailure() {
-				console.log("taf geolocation failed");
-				report.fetch({update : true});
-				var reports = new ReportsView({collection : report});
-			}
-			router.reportsRefresh = setTimeout(function() {
-				console.log("refresh via metars");
-				router.localTaf();
-			}, 60000);
-		},
-
 		taf: function(search) {
-			console.log("taf")
+			this.searchInput.val(search);
 			$("#taf-mode").addClass("mode-selected");
 			$("#metar-mode").removeClass("mode-selected")
+
 			var report = new TafCollection([], { query : search });
 			var router = this;
 
@@ -303,31 +238,29 @@ $(function(){
 
 		showMetars: function() {
 			var searchValue = $("#search").val();
-			var currentRoute = this.router.current().route;
-			if (currentRoute == "localTafs") {
-				this.router.navigate("m", {trigger: true})
-			} else if (currentRoute == "taf") {
+			if (searchValue) {
 				this.router.navigate("m/" + searchValue, {trigger: true});
+			} else {
+				this.router.navigate("m", {trigger: true})
 			}
 		},
 
 		showTafs: function() {
 			var searchValue = $("#search").val();
-			var currentRoute = this.router.current().route;
-			if (currentRoute == "localMetars") {
+			if (searchValue) {
+				this.router.navigate("t/" + searchValue, {trigger: true});				
+			} else {
 				this.router.navigate("t", {trigger: true});
-			} else if (currentRoute == "metar") {
-				this.router.navigate("t/" + searchValue, {trigger: true});
-			}		
+			}
 		},
 
 		search: function(e) {
 			e.preventDefault();
 			var searchValue = $("#search").val();
 			var currentRoute = this.router.current().route;
-			if (currentRoute == "localMetars" || currentRoute == "metar") {
+			if (currentRoute == "metar") {
 				this.router.navigate("m/" + searchValue, {trigger: true});
-			} else if (currentRoute == "localTafs" || currentRoute == "tafs") {
+			} else if (currentRoute == "taf") {
 				this.router.navigate("t/" + searchValue, {trigger: true});
 			}
 		},
@@ -335,9 +268,9 @@ $(function(){
 		location: function() {
 			var currentRoute = this.router.current().route;
 			$("#search").val("")
-			if (currentRoute == "localMetars" || currentRoute == "metar") {
+			if (currentRoute == "metar") {
 				this.router.navigate("m", {trigger: true});
-			} else if (currentRoute == "localTafs" || currentRoute == "tafs") {
+			} else if (currentRoute == "taf") {
 				this.router.navigate("t", {trigger: true});
 			}
 		}
