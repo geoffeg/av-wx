@@ -60,6 +60,7 @@
     (search-weather {:type "metar", :ip "@detect"} remote-addr)
     (let [httploc  (get-geo-data remote-addr (get qparams :geo))
           stations (clojure.string/split search #",")]
+      (pprint httploc)
       (geo-response (reports/get-metars stations) httploc))))
 
 (defn get-taf [search qparams remote-addr]

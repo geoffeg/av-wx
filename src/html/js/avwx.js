@@ -103,13 +103,12 @@ $(function(){
 		template: _.template($("#reports-template").html()),
 
 		initialize: function() {
-			Backbone.Poller.reset();
-			var view = this;
-			this.collection.on("add", this.render, this);
-			this.poller = Backbone.Poller.get(this.collection, view.poller_options);
-			this.poller.on('success', function(model) {
-				view.render(model);
+			this.render = _.wrap(this.render, function(render) {
+				// this.beforeRender();
+				render.apply(this);
+				this.trigger("afterRender", this); //this.afterRender();
 			});
+			this.collection.on("add", this.render, this);
 		},
 
 		render: function() {
@@ -119,19 +118,25 @@ $(function(){
 				this.$el.append(reportView.render().el);
 			}, this);
 			$('#metar-container').html(this.$el);
-			this.poller.start();
-
 			return this;
+		},
+
+		poll: function(data) {
+			var view = this;
+			Backbone.Poller.reset();
+			this.poller = Backbone.Poller.get(this.collection, _.extend(this.poller_options, { "data" : data }));
+			this.poller.on('success', function(model) {
+				view.render(model);
+			}).start();
 		}
 	});
 
 	var AppRouter = Backbone.Router.extend({
-
 		searchInput: $("#search"),
 		routes: {
 			""      : "metar",
 			"m"     : "metar",
-			"m/:id" : "metar",
+			"m/:id" : "searchMetar",
 			"t"     : "taf",
 			"t/:id" : "taf"
 		},
@@ -141,9 +146,7 @@ $(function(){
 			$("#taf-mode").removeClass("mode-selected");
 			$("#metar-mode").addClass("mode-selected")
 
-			var report = new MetarCollection([], { query : search });
-			var router = this;
-			var poller;
+			var metars = new MetarCollection([], { query : search });
 
 			if (navigator.geolocation) {
 				navigator.geolocation.getCurrentPosition(geoSuccess, geoFailure, { timeout: 5000 });
@@ -158,6 +161,34 @@ $(function(){
 				report.fetch({update: true});
 				var reports = new ReportsView({collection : report});
 			}
+		},
+
+		searchMetar: function(search) {
+			this.searchInput.val(search);
+			$("#taf-mode").removeClass("mode-selected");
+			$("#metar-mode").addClass("mode-selected")
+
+			var metars = new MetarCollection([], { query : search });
+			var api_request = metars.fetch();
+			var view = new ReportsView({collection : metars});
+
+			view.once("afterRender", function(view) {
+				// Now try and enhance the data with the more accurate location
+				if (navigator.geolocation) {
+					navigator.geolocation.getCurrentPosition(geoSuccess, geoFailure, { timeout: 10000 });
+				}
+
+				function geoSuccess(position) {
+					var coords = { "geo" : position.coords.latitude + "," + position.coords.longitude };
+					metars.fetch({update: true, data : coords});
+					view.poll(coords);
+				}
+
+				function geoFailure() {
+					view.poll();
+					// Todo, report the failure to the server?
+				}
+			});
 		},
 
 		taf: function(search) {

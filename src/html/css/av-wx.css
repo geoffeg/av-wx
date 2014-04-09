@@ -12,7 +12,7 @@ form { margin: 0px; }
 #metar-container { clear: both; padding: 0px 10px 0px 10px }
 #mode { clear: both; }
 .airport-info { font-size: 80%; line-height: 1.0; color: #AAA;}
-#mode LI { font-size: 38px; color: #666; padding-right: 20px; }
+#mode LI { font-size: 38px; color: #666; padding-right: 20px; cursor: pointer; }
 #loading-spinner { margin-left: auto; margin-right: auto; width: 50px;  }
 #legal-info { font-size: 10px; padding: 10px;  }
 .report {  white-space: pre-wrap;}
