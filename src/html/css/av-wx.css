@@ -24,3 +24,4 @@ form { margin: 0px; }
 .IFR { color: #FF4444; }
 .LIFR { color: #FF44FF; }
 .VFR, .MVFR, .IFR, .LIFR { padding-right: 10px; }
+.transparent { color: transparent; }

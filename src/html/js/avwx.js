@@ -1,5 +1,4 @@
 $(function(){
-	// Models
 	var Report = Backbone.Model.extend({
 		cardinal_direction: function() {
 			var bearing = this.get("bearingTo");
@@ -25,7 +24,6 @@ $(function(){
 		}
 	});
 
-	// TODO: Just extend report for both Taf and Metar
 	var Taf = Report.extend({
 		url: function() {
 			return "/api/taf/" + encodeURIComponent(this.id);
@@ -34,7 +32,7 @@ $(function(){
 			var ms_diff = new Date().getTime() - new Date(this.get("issue_time")).getTime();
 			return parseInt(ms_diff / 1000 / 60);
 		},
-		raw_text: function() {
+		raw_text: function() { // Add line breaks and spaces after TEMPO, BECMG and FM on TAFs
 			return this.get("raw_text").replace(/(TEMPO|BECMG|FM[0-9]{6})/gi, "\n $1");
 		},
 		toTemplate: function() {
@@ -80,7 +78,6 @@ $(function(){
 		}
 	});
 
-	// Views //
 	var ReportView = Backbone.View.extend({
 		tagName: "li",
 
@@ -169,29 +166,53 @@ $(function(){
 			$("#metar-mode").addClass("mode-selected")
 
 			var metars = new MetarCollection([], { query : search });
-			var api_request = metars.fetch();
+			metars.fetch();
 			var view = new ReportsView({collection : metars});
 
 			view.once("afterRender", function(view) {
-				// Now try and enhance the data with the more accurate location
+				// Now try and "enhance" the data with the more accurate location
 				if (navigator.geolocation) {
-					navigator.geolocation.getCurrentPosition(geoSuccess, geoFailure, { timeout: 10000 });
+					navigator.geolocation.getCurrentPosition(geoSuccess, geoFailure, { timeout: 5000 });
 				}
 
 				function geoSuccess(position) {
 					var coords = { "geo" : position.coords.latitude + "," + position.coords.longitude };
 					metars.fetch({update: true, data : coords});
 					view.poll(coords);
+					view.on("afterRender", function() { $('.report-position').removeClass("transparent"); })
 				}
 
 				function geoFailure() {
+					$('.report-position').removeClass("transparent");
 					view.poll();
-					// Todo, report the failure to the server?
 				}
 			});
 		},
 
 		taf: function(search) {
+			this.searchInput.val(search);
+			$("#taf-mode").addClass("mode-selected");
+			$("#metar-mode").removeClass("mode-selected")
+
+			var report = new TafCollection([], { query : search });
+			var router = this;
+
+			if (navigator.geolocation) {
+				navigator.geolocation.getCurrentPosition(geoSuccess, geoFailure, { timeout: 5000 });
+			}
+
+			function geoSuccess(position) {
+				report.fetch({update: true, data: { "latitude" : position.coords.latitude, "longitude" : position.coords.longitude }});
+				var reports = new ReportsView({collection : report});
+			}
+
+			function geoFailure() {
+				report.fetch({update : true});
+				var reports = new ReportsView({collection : report});
+			}
+		},
+
+		searchTaf: function(search) {
 			this.searchInput.val(search);
 			$("#taf-mode").addClass("mode-selected");
 			$("#metar-mode").removeClass("mode-selected")
